@@ -1,0 +1,6 @@
+catalog-v001.xml
+*.rdf
+*.classpath
+*.class
+*.prefs
+*.project

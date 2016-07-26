@@ -2,8 +2,6 @@
 
 
 import java.io.*;
-import java.util.Iterator;
-
 import org.apache.jena.ontology.*;
 import org.apache.jena.rdf.model.ModelFactory;
 
@@ -30,6 +28,11 @@ public class Demo {
 		} catch (IOException e) {
 			  e.printStackTrace();
 		}
+		
+		String templatePath = "template.docx";
+		String docSavePath = "ontologyDoc.docx";
+		WordDocWriter.writeDoc(m, templatePath, docSavePath);
+		
 		System.out.println("endOfmain");
 	}
 }

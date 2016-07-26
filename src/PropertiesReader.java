@@ -118,7 +118,8 @@ public class PropertiesReader {
 			
 			OntProperty ontp = null;
 			try{
-				ontp = m.createDatatypeProperty( row.getCell(URIIdx).getStringCellValue() );	
+				ontp = m.createOntProperty( row.getCell(URIIdx).getStringCellValue());
+				//ontp.asDatatypeProperty();
 			}
 			catch (Exception e) {
 				System.out.println("Please check URI of property \""+propertyName+"\" on row "+(r+1));
@@ -128,7 +129,7 @@ public class PropertiesReader {
 			if( !superProperty.empty() )
 				ontp.addSuperProperty(superProperty.peek());
 			superProperty.push(ontp);
-			
+			//ontp.asDatatypeProperty();
 			
 			// add domain 
 			try{
@@ -136,13 +137,15 @@ public class PropertiesReader {
 				String domains[] = domainsStr.split("\\s+"); // Splitter as one or more space
 				for( String s : domains){
 					OntClass domn = m.getOntClass(URIMap.get(s));
-					ontp.addDomain(domn);					
+					ontp.addDomain(domn);				
+					//ontp.convertToDatatypeProperty();
 				}				
 			}catch (Exception e) {
 				System.out.println("Please check the Domians of property \""+propertyName+"\" on row "+(r+1));
-				System.out.println("If not error found, check the URI of the correspoding class in classes fifinition files instead");
+				System.out.println("If not error found, check the URI of the correspoding class in classes difinition files instead");
 			}
 			
+			int propertyType = DatatypeProperty;
 			if( RangesIdx!=-1 && row.getCell(RangesIdx)!=null ){
 				try{
 					String rangesStr = row.getCell(RangesIdx).getStringCellValue().replaceAll("\\sor\\s", " ");
@@ -152,24 +155,28 @@ public class PropertiesReader {
 						// infer that the property is object property.
 						char sArray[] = s.toCharArray();
 						if( sArray[0] >= 'A' && sArray[0] <= 'Z' ){
-							ontp.convertToObjectProperty();
+							propertyType = ObjectProperty;
+							//ObjectProperty newOntp = ontp.convertToObjectProperty();
 							OntClass rage = m.getOntClass(URIMap.get(s));
 							ontp.addRange(rage);
 						}					
 					}
 				}catch (Exception e) {
 					System.out.println("Please check the Ranges of property \""+propertyName+"\" on row "+(r+1));
-					System.out.println("If not error found, check the URI of the correspoding class in classes fifinition files instead");
+					System.out.println("If not error found, check the URI of the correspoding class in classes difinition files instead");
 				}
 			}
-			
+			if( propertyType == DatatypeProperty)
+				ontp = ontp.convertToDatatypeProperty();
+				
+						
 			if( LabelZhIdx!=-1 && row.getCell(LabelZhIdx)!=null ){
 				ontp.addLabel(row.getCell(LabelZhIdx).getStringCellValue(), "zh");
 			}
 			if( LabelEnIdx!=-1 && row.getCell(LabelEnIdx)!=null ){
 				ontp.addLabel(row.getCell(LabelEnIdx).getStringCellValue(), "en");
 			}
-			
+			//ontp.remove();
 		}
 	}
 }

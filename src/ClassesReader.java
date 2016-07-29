@@ -28,7 +28,7 @@ public class ClassesReader {
 		}
 		
 		// column index of each header, which is predefined
-		int ClassesIdx = -1, URIIdx = -1, LabelZhIdx = -1, LabelEnIdx = -1, CommentZhIdx = -1;
+		int ClassesIdx = -1, URIIdx = -1, LabelZhIdx = -1, LabelEnIdx = -1, CommentZhIdx = -1, IsDefinedByIdx = -1;
 		// read the header
 		Sheet sheet = wb.getSheetAt(0);
 		Row header = sheet.getRow(0);
@@ -45,6 +45,8 @@ public class ClassesReader {
 				LabelEnIdx = col;		
 			else if( s.equals("comment xml:lang=\"zh\""))
 				CommentZhIdx = col;
+			else if( s.equals("isDefinedBy"))
+				IsDefinedByIdx = col;
 		}
 		// URI is required to build the ontology
 		try{
@@ -105,6 +107,11 @@ public class ClassesReader {
 			}
 			if( CommentZhIdx!=-1 && row.getCell(CommentZhIdx)!=null ){
 				ontc.setComment(row.getCell(CommentZhIdx).getStringCellValue(), "zh");
+			}
+			if( IsDefinedByIdx!=-1 && row.getCell(IsDefinedByIdx)!=null ){
+				// isDefinedBy -- A specialisation of seeAlso that is intended to supply a definition of this resource
+				// this reference resource is typically identified by an URI. 
+				ontc.addIsDefinedBy(m.createResource(row.getCell(IsDefinedByIdx).getStringCellValue()) );
 			}
 			
 		}

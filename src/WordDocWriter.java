@@ -60,17 +60,47 @@ public class WordDocWriter {
 				        	// !!!! customized development are supposed to be made in this block !!!!				        	
 				        	
 							String text = r.getText(0);
+							String str = null;
 							if (text.contains("URIPos")) {
 								text = text.replace("URIPos", ontc.getURI());
 								r.setText(text,0);// the pos argument can not be omitted, or the text will be appended to the end 
 							}
+							else if( text.contains("LocalNamePos")){
+								str = ontc.getLocalName();
+								text = text.replace("LocalNamePos", str);
+								r.setText(text,0);
+							}
+							else if( text.contains("LabelZhPos")){
+								str = ontc.getLabel("zh");
+								if( str == null )
+									str = "";
+								text = text.replaceAll("LabelZhPos", str);
+								r.setText(text,0);
+							}
 							else if (text.contains("CommentZhPos")) {
-								String commentStr = ontc.getComment("zh");
-								if( commentStr == null )
-									commentStr = "";
-								text = text.replace("CommentZhPos", commentStr);
+								str = ontc.getComment("zh");
+								if( str == null )
+									str = "";
+								text = text.replace("CommentZhPos", str);
 								r.setText(text,0);// the pos argument can not be omitted, or the text will be appended to the end 
 							}
+							else if( text.contains("SuperClassPos")){
+								str = "";
+								for( Iterator<OntClass> itr = ontc.listSuperClasses(); itr.hasNext();){
+									OntClass superC = itr.next();
+									str = str.concat(superC.getLocalName()+" ");
+								}
+								text = text.replace("SuperClassPos", str);
+								r.setText(text,0);
+							}
+							else if( text.contains("IsDefinedByPos")){
+								str = ontc.getIsDefinedBy().getURI();
+								if( str == null )
+									str ="";
+								text = text.replace("IsDefinedByPos", str);
+								r.setText(text,0);
+							}
+							
 				        }		       
 			     	}
 			     	

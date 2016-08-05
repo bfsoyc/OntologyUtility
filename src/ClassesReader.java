@@ -1,12 +1,16 @@
 import java.io.File;
 import java.io.IOException;
 import java.util.Stack;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.apache.jena.ontology.OntClass;
 import org.apache.jena.ontology.OntModel;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.*;
+
+
 
 // the ClassReader use for reading the classes definition file 
 // using Apache POI to handling the .xlsx file
@@ -62,6 +66,7 @@ public class ClassesReader {
 		// the classes are organized in hierarchical structure.
 		Stack<Integer> classLevel = new Stack<Integer>();
 		Stack<OntClass> superClass = new Stack<OntClass>();
+		Map<String, String> prefixMap = m.getNsPrefixMap();
 		int rowEnd = sheet.getLastRowNum();
 		for( int r = 1; r < rowEnd; r++ ){
 			Row row = sheet.getRow(r);
@@ -90,7 +95,22 @@ public class ClassesReader {
 			if( className == null ) continue;
 			OntClass ontc = null;
 			try{
-				ontc = m.createClass( row.getCell(URIIdx).getStringCellValue() );
+				String partedURI[] = row.getCell(URIIdx).getStringCellValue().split(":");
+				// the part before notation ":" should be the prefix, the last part should be the local name
+				String fullURI = null;
+				if( partedURI.length > 1 ){
+					try{
+						assert prefixMap.get(partedURI[0])!=null;
+					}
+					catch (Exception e) {
+						System.out.println("Unknown prefix:"+partedURI[0]);
+					}
+					fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+				}
+				else
+					fullURI = prefixMap.get("defaultNs") + partedURI[1];
+				
+				ontc = m.createClass( fullURI );
 			}
 			catch (Exception e) {
 				System.out.println("Please check URI of class \""+className+"\" on row "+(r+1));

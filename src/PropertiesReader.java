@@ -1,16 +1,15 @@
 import java.io.File;
 import java.io.IOException;
-import java.security.cert.CertPathChecker;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Stack;
 
-import org.apache.jena.ext.com.google.common.base.CaseFormat;
+
 import org.apache.jena.ontology.*;
+import org.apache.jena.rdf.model.*;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
-import org.apache.poi.poifs.property.PropertyTable;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -76,6 +75,7 @@ public class PropertiesReader {
 					+ " \"Domains\" exactly without extra blank space");
 		}
 			
+		/*
 		// the last element of a class URI should be consistent with its class name, otherwise
 		// it's inconvenient to construct the map form class name to its URI.
 		Map<String, String> URIMap = new HashMap<String, String>();
@@ -86,6 +86,9 @@ public class PropertiesReader {
 			String className = splitURI[splitURI.length-1];
 			URIMap.put(className, classURI);
 		}
+		Obsolete---
+		*/
+		Map<String,String> prefixMap = m.getNsPrefixMap();
 		
 		// create properties for the ontology model, one property per row
 		// the properties are organized in hierarchical structure.
@@ -136,7 +139,23 @@ public class PropertiesReader {
 				String domainsStr = row.getCell(DomainsIdx).getStringCellValue().replaceAll("\\sor\\s", " ");
 				String domains[] = domainsStr.split("\\s+"); // Splitter as one or more space
 				for( String s : domains){
-					OntClass domn = m.getOntClass(URIMap.get(s));
+					String partedURI[] = s.split(":");
+					// the part before notation ":" should be the prefix, the last part should be the local name
+					String fullURI = null;
+					if( partedURI.length > 1 ){
+						try{
+							assert prefixMap.get(partedURI[0])!=null;
+						}
+						catch (Exception e) {
+							System.out.println("Unknown prefix:"+partedURI[0]);
+						}						
+						fullURI = prefixMap.get(partedURI[0]) + partedURI[1];												
+					}					
+					else
+						fullURI = prefixMap.get("defaultNs") + partedURI[0];
+					
+					
+					OntClass domn = m.getOntClass(fullURI);
 					ontp.addDomain(domn);				
 					//ontp.convertToDatatypeProperty();
 				}				
@@ -151,15 +170,36 @@ public class PropertiesReader {
 					String rangesStr = row.getCell(RangesIdx).getStringCellValue().replaceAll("\\sor\\s", " ");
 					String ranges[] = rangesStr.split("\\s+",-1);
 					for( String s : ranges){
-						// domain with name leaded by capital letter is treated as a Class.
+						String partedURI[] = s.split(":");
+						String fullURI = null;
+						// range with local name leaded by capital letter is treated as a Class.
 						// infer that the property is object property.
-						char sArray[] = s.toCharArray();
-						if( sArray[0] >= 'A' && sArray[0] <= 'Z' ){
+						char localName[] = null;
+						if( partedURI.length > 1 ){
+							localName = partedURI[1].toCharArray();
+							try{
+								assert prefixMap.get(partedURI[0])!=null;
+							}
+							catch (Exception e) {
+								System.out.println("Unknown prefix:"+partedURI[0]);
+							}						
+							fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+						}
+						else {
+							localName = partedURI[0].toCharArray();
+							fullURI = prefixMap.get("defaultNs")+partedURI[0];
+						}
+						
+						if( localName[0] >= 'A' && localName[0] <= 'Z' ){
 							propertyType = ObjectProperty;
 							//ObjectProperty newOntp = ontp.convertToObjectProperty();
-							OntClass rage = m.getOntClass(URIMap.get(s));
-							ontp.addRange(rage);
-						}					
+								
+							OntClass rage = m.getOntClass(fullURI);
+							ontp.addRange(rage);							
+						}
+						else{
+							ontp.addRange(ResourceFactory.createResource(fullURI));					
+						}
 					}
 				}catch (Exception e) {
 					System.out.println("Please check the Ranges of property \""+propertyName+"\" on row "+(r+1));

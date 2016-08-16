@@ -68,7 +68,7 @@ public class ClassesReader {
 		Stack<OntClass> superClass = new Stack<OntClass>();
 		Map<String, String> prefixMap = m.getNsPrefixMap();
 		int rowEnd = sheet.getLastRowNum();
-		for( int r = 1; r < rowEnd; r++ ){
+		for( int r = 1; r <= rowEnd; r++ ){
 			Row row = sheet.getRow(r);
 			if( row == null ){
 				// ignore empty row
@@ -95,7 +95,9 @@ public class ClassesReader {
 			if( className == null ) continue;
 			OntClass ontc = null;
 			try{
-				String partedURI[] = row.getCell(URIIdx).getStringCellValue().split(":");
+				String s = row.getCell(URIIdx).getStringCellValue();
+				String partedURI[] = s.split(":");
+				String shortURI = null;
 				// the part before notation ":" should be the prefix, the last part should be the local name
 				String fullURI = null;
 				if( partedURI.length > 1 ){
@@ -106,9 +108,12 @@ public class ClassesReader {
 						System.out.println("Unknown prefix:"+partedURI[0]);
 					}
 					fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+					shortURI =  s;
 				}
-				else
+				else{
 					fullURI = prefixMap.get("defaultNs") + partedURI[1];
+					shortURI ="relico:" + s;
+				}
 				
 				ontc = m.createClass( fullURI );
 			}
@@ -131,7 +136,22 @@ public class ClassesReader {
 			if( IsDefinedByIdx!=-1 && row.getCell(IsDefinedByIdx)!=null ){
 				// isDefinedBy -- A specialisation of seeAlso that is intended to supply a definition of this resource
 				// this reference resource is typically identified by an URI. 
-				ontc.addIsDefinedBy(m.createResource(row.getCell(IsDefinedByIdx).getStringCellValue()) );
+				String partedURI[] = row.getCell(IsDefinedByIdx).getStringCellValue().split(":");
+				String fullURI;
+				if( partedURI.length > 1 ){
+					try{
+						assert prefixMap.get(partedURI[0])!=null;
+					}
+					catch (Exception e) {
+						System.out.println("Unknown prefix:"+partedURI[0]);
+					}
+					fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+				}
+				else{
+					fullURI = prefixMap.get(partedURI[0]);
+				}
+				
+				ontc.addIsDefinedBy(m.createResource( fullURI ) );
 			}
 			
 		}

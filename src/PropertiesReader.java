@@ -95,7 +95,7 @@ public class PropertiesReader {
 		Stack<Integer> propertyLevel = new Stack<Integer>();
 		Stack<OntProperty> superProperty = new Stack<OntProperty>();
 		int rowEnd = sheet.getLastRowNum();
-		for( int r = 1; r < rowEnd; r++ ){
+		for( int r = 1; r <= rowEnd; r++ ){
 			Row row = sheet.getRow(r);
 			if( row == null ){
 				// ignore empty row
@@ -142,6 +142,7 @@ public class PropertiesReader {
 					String partedURI[] = s.split(":");
 					// the part before notation ":" should be the prefix, the last part should be the local name
 					String fullURI = null;
+					String shortURI;
 					if( partedURI.length > 1 ){
 						try{
 							assert prefixMap.get(partedURI[0])!=null;
@@ -149,11 +150,13 @@ public class PropertiesReader {
 						catch (Exception e) {
 							System.out.println("Unknown prefix:"+partedURI[0]);
 						}						
-						fullURI = prefixMap.get(partedURI[0]) + partedURI[1];												
+						fullURI = prefixMap.get(partedURI[0]) + partedURI[1];	
+						shortURI = s;
 					}					
-					else
+					else{
 						fullURI = prefixMap.get("defaultNs") + partedURI[0];
-					
+						shortURI ="relico:" +  s;
+					}
 					
 					OntClass domn = m.getOntClass(fullURI);
 					ontp.addDomain(domn);				
@@ -161,7 +164,7 @@ public class PropertiesReader {
 				}				
 			}catch (Exception e) {
 				System.out.println("Please check the Domians of property \""+propertyName+"\" on row "+(r+1));
-				System.out.println("If not error found, check the URI of the correspoding class in classes difinition files instead");
+				System.out.println("If not error found, check the URI of the correspoding class in classes definition files instead");
 			}
 			
 			int propertyType = DatatypeProperty;
@@ -172,6 +175,7 @@ public class PropertiesReader {
 					for( String s : ranges){
 						String partedURI[] = s.split(":");
 						String fullURI = null;
+						String shortURI = null;
 						// range with local name leaded by capital letter is treated as a Class.
 						// infer that the property is object property.
 						char localName[] = null;
@@ -184,10 +188,12 @@ public class PropertiesReader {
 								System.out.println("Unknown prefix:"+partedURI[0]);
 							}						
 							fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+							shortURI =  s;
 						}
 						else {
 							localName = partedURI[0].toCharArray();
 							fullURI = prefixMap.get("defaultNs")+partedURI[0];
+							shortURI = "relico:" + s;
 						}
 						
 						if( localName[0] >= 'A' && localName[0] <= 'Z' ){
@@ -203,7 +209,7 @@ public class PropertiesReader {
 					}
 				}catch (Exception e) {
 					System.out.println("Please check the Ranges of property \""+propertyName+"\" on row "+(r+1));
-					System.out.println("If not error found, check the URI of the correspoding class in classes difinition files instead");
+					System.out.println("If not error found, check the URI of the correspoding class in classes definition files instead");
 				}
 			}
 			if( propertyType == DatatypeProperty)

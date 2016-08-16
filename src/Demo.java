@@ -12,12 +12,13 @@ import java.util.Map;
 public class Demo {
 	public static void main(String args[]) throws FileNotFoundException{
 		//System.out.println("hello jena");
-		String SOURCE = "http://www.OMG.org/paradise/relico";	
+		String SOURCE = "http://www.xxx.org.cn/standards/relic/ontology/core";	
 		String NS = SOURCE + "#";
 		String yourOntologyNsPrefix = "relico"; // relico is short for the name space NS. 
 				
 		Map<String, String> NsMap = new HashMap<String, String>(){{
 			put(yourOntologyNsPrefix, NS);
+			put("skos","http://www.w3.org/2004/02/skos/core#");
 			/*  the listing useful prefix are already exist in default Ontmodel:
 				owl for http://www.w3.org/2002/07/owl#
 				rdf for http://www.w3.org/1999/02/22-rdf-syntax-ns#
@@ -30,6 +31,7 @@ public class Demo {
 		}};
 		
 		OntModel m = ModelFactory.createOntologyModel();
+		m.createOntology(SOURCE);
 		// use a Map container to set(add) all prefixes in once
 		m.setNsPrefixes(NsMap);	
 		// use method setNsPrefix to set prefixes one by one
@@ -43,13 +45,16 @@ public class Demo {
 		}
 		*/
 		
-		String classDefintionFile = "D:\\Users\\OuYuanchang\\destop\\单位工作\\20150819_文物数字化保护标准体系及关键标准研究与示范"
-				+ "\\virtual\\virtual\\ontology\\classes.xlsx";		
-		ClassesReader.read( m, classDefintionFile);
+		String classDefinitionFile = "resource\\classes.xlsx";		
+		ClassesReader.read( m, classDefinitionFile);
 		
-		String datatypePropertyDefintionFile = "D:\\Users\\OuYuanchang\\destop\\单位工作\\20150819_文物数字化保护标准体系及关键标准研究与示范"
-				+ "\\virtual\\virtual\\ontology\\Properties0710.xlsx";
-		PropertiesReader.read(m, datatypePropertyDefintionFile);
+		String datatypePropertyDefinitionFile = "resource\\DatatypeProperties.xlsx";
+		String objectPropertyDefinitionFile = "resource\\ObjectProperties.xlsx";
+		PropertiesReader.read(m, datatypePropertyDefinitionFile);
+		PropertiesReader.read(m, objectPropertyDefinitionFile);
+		
+		String individualDefinitionFile = "resource\\enumeration.xlsx";
+		IndividualsReader.read(m, individualDefinitionFile);
 		
 		try {
 
@@ -62,7 +67,7 @@ public class Demo {
 		
 		String templatePath = "template.docx";
 		String docSavePath = "ontologyDoc.docx";
-		WordDocWriter.writeDoc(m, templatePath, docSavePath);
+		//WordDocWriter.writeDoc(m, templatePath, docSavePath);
 		
 		System.out.println("endOfmain");
 	}

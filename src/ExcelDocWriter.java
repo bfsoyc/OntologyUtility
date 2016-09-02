@@ -27,6 +27,7 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ExcelDocWriter {
+	private static final Boolean isDirect = true;
 	private static Integer idxOffset, cHierarchyDepth, pHierarchyDepth;
 	public static void writeDoc( String ontologyPath, String dirPath){
 		File file = new File(dirPath);
@@ -214,7 +215,7 @@ public class ExcelDocWriter {
 			}
 		}
 		
-		List<OntClass> subOntc = ontc.listSubClasses().toList();
+		List<OntClass> subOntc = ontc.listSubClasses(isDirect).toList();
 		if( subOntc.size() > 0 ){			
 			for( int i = 0 ; i < subOntc.size(); i++ ){
 				_dfs_c(sheet, m, subOntc.get(i), headerMap, deep+1);
@@ -321,7 +322,7 @@ public class ExcelDocWriter {
 			}
 		}
 		
-		List<? extends OntProperty> subOntdp =  ontdp.listSubProperties().toList();
+		List<? extends OntProperty> subOntdp =  ontdp.listSubProperties(isDirect).toList();
 		if( subOntdp.size() > 0 ){			
 			for( int i = 0 ; i < subOntdp.size(); i++ ){
 				// a property is sub-property of itself, we need to exclude itself from the sub-property list.

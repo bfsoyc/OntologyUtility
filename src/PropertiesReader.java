@@ -21,6 +21,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 public class PropertiesReader {
 	static final int ObjectProperty = 1, DatatypeProperty = 2;
 	
+	
 	public static void read( OntModel m, String filePath ){
 		// open file
 		Workbook wb = null;
@@ -136,6 +137,55 @@ public class PropertiesReader {
 			
 			// add domain 
 			try{
+				String domains[] = row.getCell(DomainsIdx).getStringCellValue().split("\\s+");
+				OntClass doms = null;
+				
+				try{
+					assert domains.length%2 == 1;
+				}catch( Exception e ){
+					System.out.println("Invalid Domain expression");
+				}
+				
+				for( int i = 0 ; i < domains.length ; i+=2 ){
+					String relation = "or";
+					if( i > 0 ){
+						relation = domains[i-1];
+					}
+					String partedURI[] = domains[i].split(":");
+					// the part before notation ":" should be the prefix, the last part should be the local name
+					String fullURI = null;
+					if( partedURI.length > 1 ){
+						try{
+							assert prefixMap.get(partedURI[0])!=null;
+						}
+						catch (Exception e) {
+							System.out.println("Unknown prefix:"+partedURI[0]);
+						}						
+						fullURI = prefixMap.get(partedURI[0]) + partedURI[1];	
+					}					
+					else{
+						fullURI = prefixMap.get("defaultNs") + partedURI[0];
+					}
+					OntClass dom = m.getOntClass(fullURI);
+					if( i == 0){
+						doms = dom;
+					}
+					
+					if( relation.equals("or") ){
+						UnionClass unionc = m.createUnionClass( null, m.createList( new RDFNode[] { doms, dom } ));;
+						doms = unionc.asClass();
+					}
+					else if(relation.equals("and") ){
+						IntersectionClass interc = m.createIntersectionClass( null, m.createList( new RDFNode[] { doms, dom } ));;
+						doms = interc.asClass();
+					}
+					else{
+						System.out.println("Invalid Domain expression");
+					}
+					
+				}
+				ontp.addDomain(doms);
+				/*
 				String domainsStr = row.getCell(DomainsIdx).getStringCellValue().replaceAll("\\sor\\s", " ");
 				String domains[] = domainsStr.split("\\s+"); // Splitter as one or more space
 				for( String s : domains){
@@ -159,9 +209,14 @@ public class PropertiesReader {
 					}
 					
 					OntClass domn = m.getOntClass(fullURI);
-					ontp.addDomain(domn);				
+					ontp.addDomain(domn);	
+					// !!!!!!!!!!!!!!!!!!!!!
+					// the domain of the property will be the intersection of all classes you add to its domain, which is not what we expect
+					// so those code are wrong in our case.
 					//ontp.convertToDatatypeProperty();
-				}				
+				 
+				}
+				*/				
 			}catch (Exception e) {
 				System.out.println("Please check the Domians of property \""+propertyName+"\" on row "+(r+1));
 				System.out.println("If not error found, check the URI of the correspoding class in classes definition files instead");
@@ -170,12 +225,18 @@ public class PropertiesReader {
 			int propertyType = DatatypeProperty;
 			if( RangesIdx!=-1 && row.getCell(RangesIdx)!=null ){
 				try{
-					String rangesStr = row.getCell(RangesIdx).getStringCellValue().replaceAll("\\sor\\s", " ");
-					String ranges[] = rangesStr.split("\\s+",-1);
-					for( String s : ranges){
-						String partedURI[] = s.split(":");
+
+					String ranges[] = row.getCell(RangesIdx).getStringCellValue().split("\\s+");
+					
+					try{
+						assert ranges.length == 1;
+					}catch( Exception e ){
+						System.out.println("Invalid Range expression: only single range is supported now");
+					}					
+					
+					for( int i = 0 ; i < ranges.length; i+= 2){
+						String partedURI[] = ranges[i].split(":");
 						String fullURI = null;
-						String shortURI = null;
 						// range with local name leaded by capital letter is treated as a Class.
 						// infer that the property is object property.
 						char localName[] = null;
@@ -188,17 +249,14 @@ public class PropertiesReader {
 								System.out.println("Unknown prefix:"+partedURI[0]);
 							}						
 							fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
-							shortURI =  s;
 						}
 						else {
 							localName = partedURI[0].toCharArray();
 							fullURI = prefixMap.get("defaultNs")+partedURI[0];
-							shortURI = "relico:" + s;
 						}
 						
 						if( localName[0] >= 'A' && localName[0] <= 'Z' ){
 							propertyType = ObjectProperty;
-							//ObjectProperty newOntp = ontp.convertToObjectProperty();
 								
 							OntClass rage = m.getOntClass(fullURI);
 							ontp.addRange(rage);							
@@ -207,6 +265,7 @@ public class PropertiesReader {
 							ontp.addRange(ResourceFactory.createResource(fullURI));					
 						}
 					}
+					
 				}catch (Exception e) {
 					System.out.println("Please check the Ranges of property \""+propertyName+"\" on row "+(r+1));
 					System.out.println("If not error found, check the URI of the correspoding class in classes definition files instead");

@@ -17,6 +17,9 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 public class IndividualsReader {
 	public static void read( OntModel m, String filePath ){
+		// !!!!!!!!!!!!!!!!!!! important note : Classes is necessary value for every instances and default value is not supported now
+		//                     URI is required fullURI too!
+		
 		// open file
 		Workbook wb = null;
 		try {
@@ -42,7 +45,7 @@ public class IndividualsReader {
 			int col = cell.getColumnIndex();
 			if( s.equals("Individuals") )
 				IndividualsIdx = col;		
-			else if( s.equals("URI") )
+			else if( s.equals("URI1") ) // temporary solution!!
 				URIIdx = col;
 			else if( s.equals("label xml:lang=\"zh\"") )
 				LabelZhIdx = col;

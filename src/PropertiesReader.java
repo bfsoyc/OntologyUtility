@@ -8,6 +8,7 @@ import java.util.Stack;
 
 import org.apache.jena.ontology.*;
 import org.apache.jena.rdf.model.*;
+import org.apache.jena.vocabulary.OWL;
 import org.apache.poi.EncryptedDocumentException;
 import org.apache.poi.openxml4j.exceptions.InvalidFormatException;
 import org.apache.poi.ss.usermodel.Cell;
@@ -113,7 +114,7 @@ public class PropertiesReader {
 					while( !propertyLevel.empty() && c <= propertyLevel.peek().intValue() ){
 						propertyLevel.pop();
 						superProperty.pop();						
-					}
+					} 
 					propertyLevel.push(c);
 					break;
 				}
@@ -122,7 +123,26 @@ public class PropertiesReader {
 			
 			OntProperty ontp = null;
 			try{
-				ontp = m.createOntProperty( row.getCell(URIIdx).getStringCellValue());
+				String partedURI[] = row.getCell(URIIdx).getStringCellValue().split(":");
+				String fullURI = null;
+				char localName[] = null;
+				if( partedURI.length > 1 ){
+					localName = partedURI[1].toCharArray();
+					try{
+						assert prefixMap.get(partedURI[0])!=null;
+					}
+					catch (Exception e) {
+						System.out.println("Unknown prefix:"+partedURI[0]);
+					}						
+					fullURI = prefixMap.get(partedURI[0]) + partedURI[1];
+				}
+				else {
+					localName = partedURI[0].toCharArray();
+					fullURI = prefixMap.get("defaultNs")+partedURI[0];
+				}
+				
+				
+				ontp = m.createOntProperty( fullURI );
 				//ontp.asDatatypeProperty();
 			}
 			catch (Exception e) {
@@ -259,7 +279,8 @@ public class PropertiesReader {
 							propertyType = ObjectProperty;
 								
 							OntClass rage = m.getOntClass(fullURI);
-							ontp.addRange(rage);							
+							ontp.addRange(rage);	
+							ontp.addRDFType(OWL.ObjectProperty);
 						}
 						else{
 							ontp.addRange(ResourceFactory.createResource(fullURI));					
@@ -271,8 +292,12 @@ public class PropertiesReader {
 					System.out.println("If not error found, check the URI of the correspoding class in classes definition files instead");
 				}
 			}
-			if( propertyType == DatatypeProperty)
-				ontp = ontp.convertToDatatypeProperty();
+			if( propertyType == DatatypeProperty){
+				//ontp = ontp.convertToDatatypeProperty();
+				// class ObjectProerty or DatatypeProperty in Jena provide convenient API for specific operation.
+				// However, you have to mark it with OWL label such as owl:datatypeProperty by setRDFType method, so that other application can parse it in convenitent.
+				ontp.setRDFType(OWL.DatatypeProperty);
+			}
 				
 						
 			if( LabelZhIdx!=-1 && row.getCell(LabelZhIdx)!=null ){
